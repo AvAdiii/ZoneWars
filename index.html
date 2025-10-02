@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouMatter - App Navigation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'calm-blue': '#3B82F6',
+                        'vibrant-green': '#10B981',
+                        'encouraging-orange': '#F59E0B'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="max-w-4xl mx-auto p-8">
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-calm-blue mb-4">YouMatter</h1>
+            <p class="text-xl text-gray-600 mb-8">A wellness app that combines health tracking with real-world territory conquest</p>
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">App Components</h2>
+                <p class="text-gray-600 mb-4">Click on any component below to explore the YouMatter app:</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Dashboard Card -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-calm-blue to-vibrant-green p-6 text-white">
+                    <div class="text-4xl mb-4">🏠</div>
+                    <h3 class="text-xl font-bold mb-2">Main Dashboard</h3>
+                    <p class="text-blue-100 text-sm">Central hub with wellness metrics, geo-conquest preview, and daily challenges</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Wellness metrics tracking
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Daily challenges & quests
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Points & level system
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Bottom navigation
+                        </div>
+                    </div>
+                    <a href="dashboard.html" class="block w-full bg-calm-blue hover:bg-blue-700 text-white text-center py-3 rounded-lg font-medium transition-colors">
+                        View Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Geo-Conquest Card -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-vibrant-green to-encouraging-orange p-6 text-white">
+                    <div class="text-4xl mb-4">🗺️</div>
+                    <h3 class="text-xl font-bold mb-2">Geo-Conquest Game</h3>
+                    <p class="text-green-100 text-sm">Real-world territory capture game using GPS tracking and maps</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Real-time GPS tracking
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Territory capture mechanics
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Multiplayer interaction
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Live leaderboard stats
+                        </div>
+                    </div>
+                    <a href="geo-conquest.html" class="block w-full bg-vibrant-green hover:bg-green-700 text-white text-center py-3 rounded-lg font-medium transition-colors">
+                        Start Exploring
+                    </a>
+                </div>
+            </div>
+
+            <!-- Community Card -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                <div class="bg-gradient-to-r from-encouraging-orange to-red-500 p-6 text-white">
+                    <div class="text-4xl mb-4">👥</div>
+                    <h3 class="text-xl font-bold mb-2">Community Hub</h3>
+                    <p class="text-orange-100 text-sm">Social features, leaderboards, challenges, and user profiles</p>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Global & local leaderboards
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Community challenges
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            User profiles & friends
+                        </div>
+                        <div class="flex items-center text-sm text-gray-600">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                            Achievement system
+                        </div>
+                    </div>
+                    <a href="community.html" class="block w-full bg-encouraging-orange hover:bg-orange-600 text-white text-center py-3 rounded-lg font-medium transition-colors">
+                        Join Community
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Overview -->
+        <div class="mt-12 bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Technical Implementation</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Frontend Technologies</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                            React.js for interactive components
+                        </li>
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                            Tailwind CSS for responsive styling
+                        </li>
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                            Leaflet.js for interactive maps
+                        </li>
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                            Turf.js for geospatial calculations
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Key Features</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                            Real-time GPS tracking
+                        </li>
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                            Territory capture & takeover
+                        </li>
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                            Multiplayer synchronization
+                        </li>
+                        <li class="flex items-center">
+                            <span class="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                            Social leaderboards & challenges
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="mt-8 bg-blue-50 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-calm-blue mb-3">🚀 Getting Started</h3>
+            <div class="text-gray-700 space-y-2">
+                <p><strong>For GPS features:</strong> Allow location access when prompted to test the geo-conquest functionality.</p>
+                <p><strong>For best experience:</strong> Test on mobile devices or use browser developer tools to simulate mobile.</p>
+                <p><strong>Firebase setup:</strong> Currently uses mock data. Replace with actual Firebase configuration for production.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

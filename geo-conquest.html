@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouMatter - Geo-Conquest</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Turf.js for geometric calculations -->
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .leaflet-control-container .leaflet-top.leaflet-left {
+            top: 80px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <!-- Top Overlay -->
+    <div class="absolute top-0 left-0 right-0 z-[1000] bg-white/95 backdrop-blur-sm shadow-lg">
+        <div class="flex justify-between items-center px-4 py-3">
+            <div class="flex items-center space-x-4">
+                <button id="backBtn" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <h1 class="text-xl font-bold text-gray-900">Geo-Conquest</h1>
+            </div>
+            <div class="flex items-center space-x-4 text-sm">
+                <div class="text-center">
+                    <div class="font-bold text-blue-600" id="currentArea">0 m²</div>
+                    <div class="text-gray-500">Current</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-bold text-green-600" id="totalTerritory">0.0 km²</div>
+                    <div class="text-gray-500">Total</div>
+                </div>
+                <div class="text-center">
+                    <div class="font-bold text-orange-600" id="globalRank">#--</div>
+                    <div class="text-gray-500">Rank</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Bottom Controls -->
+    <div class="absolute bottom-0 left-0 right-0 z-[1000] bg-white/95 backdrop-blur-sm border-t">
+        <div class="flex justify-center items-center px-4 py-4 space-x-4">
+            <button id="recenterBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Recenter</span>
+            </button>
+            
+            <button id="trackingBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors flex items-center space-x-2">
+                <span id="trackingIcon">▶️</span>
+                <span id="trackingText">Start Tracking</span>
+            </button>
+            
+            <button id="clearBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                <span>Clear</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="statusContainer" class="absolute top-20 left-4 right-4 z-[1000] pointer-events-none">
+        <!-- Status messages will be inserted here -->
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Firebase (Mock implementation for demo) -->
+    <script>
+        // Mock Firebase implementation for demo purposes
+        // In a real app, you would use the actual Firebase SDK
+        const mockFirestore = {
+            territories: new Map(),
+            listeners: new Set(),
+            
+            onSnapshot: function(callback) {
+                this.listeners.add(callback);
+                // Initial call with current data
+                callback([...this.territories.values()]);
+                return () => this.listeners.delete(callback);
+            },
+            
+            add: function(territory) {
+                const id = Date.now().toString();
+                const territoryWithId = { id, ...territory };
+                this.territories.set(id, territoryWithId);
+                this.notifyListeners();
+                return Promise.resolve({ id });
+            },
+            
+            update: function(id, updates) {
+                if (this.territories.has(id)) {
+                    this.territories.set(id, { ...this.territories.get(id), ...updates });
+                    this.notifyListeners();
+                }
+                return Promise.resolve();
+            },
+            
+            notifyListeners: function() {
+                const data = [...this.territories.values()];
+                this.listeners.forEach(callback => callback(data));
+            }
+        };
+    </script>
+
+    <script>
+        class GeoConquest {
+            constructor() {
+                this.map = null;
+                this.userLocation = null;
+                this.isTracking = false;
+                this.currentPath = [];
+                this.currentPolyline = null;
+                this.userTerritories = [];
+                this.allTerritories = [];
+                this.watchId = null;
+                this.userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                this.userColor = this.generateUserColor();
+                this.totalArea = 0;
+                
+                this.init();
+            }
+            
+            generateUserColor() {
+                const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            init() {
+                this.initMap();
+                this.initEventListeners();
+                this.initFirestoreListener();
+                this.getUserLocation();
+            }
+            
+            initMap() {
+                this.map = L.map('map', {
+                    zoomControl: false
+                }).setView([40.7128, -74.0060], 15); // Default to NYC
+                
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                    subdomains: 'abcd',
+                    maxZoom: 20
+                }).addTo(this.map);
+                
+                // Add zoom control in bottom right
+                L.control.zoom({
+                    position: 'bottomright'
+                }).addTo(this.map);
+            }
+            
+            initEventListeners() {
+                document.getElementById('trackingBtn').addEventListener('click', () => {
+                    this.toggleTracking();
+                });
+                
+                document.getElementById('recenterBtn').addEventListener('click', () => {
+                    this.recenterMap();
+                });
+                
+                document.getElementById('clearBtn').addEventListener('click', () => {
+                    this.clearCurrentPath();
+                });
+                
+                document.getElementById('backBtn').addEventListener('click', () => {
+                    // In a real app, this would navigate back to dashboard
+                    this.showStatus('Returning to dashboard...', 'info');
+                });
+            }
+            
+            initFirestoreListener() {
+                mockFirestore.onSnapshot((territories) => {
+                    this.updateTerritoriesOnMap(territories);
+                });
+            }
+            
+            getUserLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        this.userLocation = [position.coords.latitude, position.coords.longitude];
+                        this.map.setView(this.userLocation, 16);
+                        this.addUserMarker();
+                    }, (error) => {
+                        this.showStatus('Unable to get your location. Using default location.', 'warning');
+                        this.userLocation = [40.7128, -74.0060];
+                        this.addUserMarker();
+                    });
+                } else {
+                    this.showStatus('Geolocation is not supported by this browser.', 'error');
+                }
+            }
+            
+            addUserMarker() {
+                if (this.userLocation) {
+                    const userIcon = L.divIcon({
+                        className: 'user-marker',
+                        html: `<div style="background-color: ${this.userColor}; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
+                        iconSize: [16, 16],
+                        iconAnchor: [8, 8]
+                    });
+                    
+                    L.marker(this.userLocation, { icon: userIcon }).addTo(this.map);
+                }
+            }
+            
+            toggleTracking() {
+                if (this.isTracking) {
+                    this.stopTracking();
+                } else {
+                    this.startTracking();
+                }
+            }
+            
+            startTracking() {
+                if (!navigator.geolocation) {
+                    this.showStatus('Geolocation is not supported', 'error');
+                    return;
+                }
+                
+                this.isTracking = true;
+                this.updateTrackingButton();
+                this.showStatus('Tracking started! Start walking to capture territory.', 'success');
+                
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                };
+                
+                this.watchId = navigator.geolocation.watchPosition((position) => {
+                    const newPoint = [position.coords.latitude, position.coords.longitude];
+                    this.addPointToPath(newPoint);
+                    this.updateUserMarker(newPoint);
+                }, (error) => {
+                    this.showStatus('Error tracking location: ' + error.message, 'error');
+                }, options);
+            }
+            
+            stopTracking() {
+                if (this.watchId) {
+                    navigator.geolocation.clearWatch(this.watchId);
+                    this.watchId = null;
+                }
+                
+                this.isTracking = false;
+                this.updateTrackingButton();
+                this.showStatus('Tracking stopped.', 'info');
+                
+                // Check if we can create a territory
+                if (this.currentPath.length > 3) {
+                    this.checkForTerritoryCapture();
+                }
+            }
+            
+            addPointToPath(point) {
+                this.currentPath.push(point);
+                this.updateCurrentPolyline();
+                this.updateCurrentAreaDisplay();
+                
+                // Check for self-intersection (potential territory capture)
+                if (this.currentPath.length > 3) {
+                    this.checkForSelfIntersection();
+                }
+            }
+            
+            updateCurrentPolyline() {
+                if (this.currentPolyline) {
+                    this.map.removeLayer(this.currentPolyline);
+                }
+                
+                if (this.currentPath.length > 1) {
+                    this.currentPolyline = L.polyline(this.currentPath, {
+                        color: this.userColor,
+                        weight: 4,
+                        opacity: 0.8
+                    }).addTo(this.map);
+                }
+            }
+            
+            checkForSelfIntersection() {
+                if (this.currentPath.length < 4) return;
+                
+                try {
+                    const lineString = turf.lineString(this.currentPath.map(p => [p[1], p[0]]));
+                    const intersections = turf.kinks(lineString);
+                    
+                    if (intersections.features.length > 0) {
+                        this.captureTerritoryFromPath();
+                    }
+                } catch (error) {
+                    console.log('Error checking intersection:', error);
+                }
+            }
+            
+            checkForTerritoryCapture() {
+                if (this.currentPath.length < 3) return;
+                
+                try {
+                    // Check if the path forms a closed loop (first and last points are close)
+                    const firstPoint = this.currentPath[0];
+                    const lastPoint = this.currentPath[this.currentPath.length - 1];
+                    const distance = this.calculateDistance(firstPoint, lastPoint);
+                    
+                    if (distance < 50) { // 50 meters threshold
+                        this.captureTerritoryFromPath();
+                    }
+                } catch (error) {
+                    console.log('Error checking territory capture:', error);
+                }
+            }
+            
+            captureTerritoryFromPath() {
+                if (this.currentPath.length < 3) return;
+                
+                try {
+                    // Create a polygon from the current path
+                    const polygonCoords = [...this.currentPath.map(p => [p[1], p[0]])];
+                    polygonCoords.push(polygonCoords[0]); // Close the polygon
+                    
+                    const polygon = turf.polygon([polygonCoords]);
+                    const area = turf.area(polygon);
+                    
+                    if (area > 100) { // Minimum area of 100 square meters
+                        this.createTerritory(polygon, area);
+                        this.clearCurrentPath();
+                        this.showStatus(`Territory captured! Area: ${this.formatArea(area)}`, 'success');
+                    }
+                } catch (error) {
+                    console.log('Error creating territory:', error);
+                    this.showStatus('Error capturing territory. Try again.', 'error');
+                }
+            }
+            
+            createTerritory(polygon, area) {
+                const territory = {
+                    userId: this.userId,
+                    userColor: this.userColor,
+                    polygon: polygon.geometry,
+                    area: area,
+                    timestamp: Date.now()
+                };
+                
+                // Check for territory takeovers
+                this.checkTerritoryTakeovers(polygon, territory);
+                
+                // Add to Firestore
+                mockFirestore.add(territory);
+                
+                this.totalArea += area;
+                this.updateStatsDisplay();
+            }
+            
+            checkTerritoryTakeovers(newPolygon, newTerritory) {
+                this.allTerritories.forEach(territory => {
+                    if (territory.userId !== this.userId) {
+                        try {
+                            const existingPolygon = turf.polygon(territory.polygon.coordinates);
+                            const isContained = turf.booleanContains(newPolygon, existingPolygon);
+                            
+                            if (isContained) {
+                                // Territory takeover!
+                                this.showStatus(`Territory takeover! You captured ${this.formatArea(territory.area)} from another player!`, 'success');
+                                
+                                // Update the territory ownership
+                                mockFirestore.update(territory.id, {
+                                    userId: this.userId,
+                                    userColor: this.userColor,
+                                    takenOver: true,
+                                    originalOwner: territory.userId
+                                });
+                            }
+                        } catch (error) {
+                            console.log('Error checking takeover:', error);
+                        }
+                    }
+                });
+            }
+            
+            updateTerritoriesOnMap(territories) {
+                this.allTerritories = territories;
+                
+                // Clear existing territory layers
+                this.map.eachLayer(layer => {
+                    if (layer.options && layer.options.isTerritory) {
+                        this.map.removeLayer(layer);
+                    }
+                });
+                
+                // Add all territories to map
+                territories.forEach(territory => {
+                    this.addTerritoryToMap(territory);
+                });
+                
+                this.updateStatsDisplay();
+            }
+            
+            addTerritoryToMap(territory) {
+                try {
+                    const coords = territory.polygon.coordinates[0].map(coord => [coord[1], coord[0]]);
+                    
+                    const polygon = L.polygon(coords, {
+                        color: territory.userColor,
+                        fillColor: territory.userColor,
+                        fillOpacity: territory.userId === this.userId ? 0.4 : 0.2,
+                        weight: 2,
+                        isTerritory: true
+                    }).addTo(this.map);
+                    
+                    polygon.bindPopup(`
+                        <div class="text-sm">
+                            <div class="font-bold">${territory.userId === this.userId ? 'Your Territory' : 'Enemy Territory'}</div>
+                            <div>Area: ${this.formatArea(territory.area)}</div>
+                            <div>Captured: ${new Date(territory.timestamp).toLocaleString()}</div>
+                        </div>
+                    `);
+                } catch (error) {
+                    console.log('Error adding territory to map:', error);
+                }
+            }
+            
+            updateUserMarker(newLocation) {
+                this.userLocation = newLocation;
+                
+                // Remove existing user marker and add new one
+                this.map.eachLayer(layer => {
+                    if (layer.options && layer.options.icon && layer.options.icon.options.className === 'user-marker') {
+                        this.map.removeLayer(layer);
+                    }
+                });
+                
+                this.addUserMarker();
+            }
+            
+            recenterMap() {
+                if (this.userLocation) {
+                    this.map.setView(this.userLocation, 16);
+                    this.showStatus('Map recentered', 'info');
+                }
+            }
+            
+            clearCurrentPath() {
+                this.currentPath = [];
+                if (this.currentPolyline) {
+                    this.map.removeLayer(this.currentPolyline);
+                    this.currentPolyline = null;
+                }
+                this.updateCurrentAreaDisplay();
+            }
+            
+            updateTrackingButton() {
+                const btn = document.getElementById('trackingBtn');
+                const icon = document.getElementById('trackingIcon');
+                const text = document.getElementById('trackingText');
+                
+                if (this.isTracking) {
+                    btn.className = 'bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors flex items-center space-x-2';
+                    icon.textContent = '⏹️';
+                    text.textContent = 'Stop Tracking';
+                } else {
+                    btn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold text-lg transition-colors flex items-center space-x-2';
+                    icon.textContent = '▶️';
+                    text.textContent = 'Start Tracking';
+                }
+            }
+            
+            updateCurrentAreaDisplay() {
+                const currentAreaEl = document.getElementById('currentArea');
+                if (this.currentPath.length > 2) {
+                    try {
+                        const polygonCoords = [...this.currentPath.map(p => [p[1], p[0]])];
+                        polygonCoords.push(polygonCoords[0]);
+                        const polygon = turf.polygon([polygonCoords]);
+                        const area = turf.area(polygon);
+                        currentAreaEl.textContent = this.formatArea(area);
+                    } catch (error) {
+                        currentAreaEl.textContent = '0 m²';
+                    }
+                } else {
+                    currentAreaEl.textContent = '0 m²';
+                }
+            }
+            
+            updateStatsDisplay() {
+                // Calculate total territory for this user
+                let userTotalArea = 0;
+                this.allTerritories.forEach(territory => {
+                    if (territory.userId === this.userId) {
+                        userTotalArea += territory.area;
+                    }
+                });
+                
+                document.getElementById('totalTerritory').textContent = this.formatArea(userTotalArea, true);
+                
+                // Calculate global rank (mock)
+                const rank = Math.floor(Math.random() * 100) + 1;
+                document.getElementById('globalRank').textContent = `#${rank}`;
+            }
+            
+            formatArea(area, useKm = false) {
+                if (useKm && area > 1000000) {
+                    return (area / 1000000).toFixed(2) + ' km²';
+                } else if (area > 1000) {
+                    return (area / 1000).toFixed(1) + ' k m²';
+                } else {
+                    return Math.round(area) + ' m²';
+                }
+            }
+            
+            calculateDistance(point1, point2) {
+                const R = 6371000; // Earth's radius in meters
+                const dLat = (point2[0] - point1[0]) * Math.PI / 180;
+                const dLon = (point2[1] - point1[1]) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                         Math.cos(point1[0] * Math.PI / 180) * Math.cos(point2[0] * Math.PI / 180) *
+                         Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            }
+            
+            showStatus(message, type = 'info') {
+                const container = document.getElementById('statusContainer');
+                const statusEl = document.createElement('div');
+                
+                const bgColor = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    warning: 'bg-yellow-500',
+                    info: 'bg-blue-500'
+                }[type];
+                
+                statusEl.className = `${bgColor} text-white px-4 py-2 rounded-lg mb-2 shadow-lg transform transition-all duration-300 translate-y-[-10px] opacity-0`;
+                statusEl.textContent = message;
+                
+                container.appendChild(statusEl);
+                
+                // Animate in
+                setTimeout(() => {
+                    statusEl.classList.remove('translate-y-[-10px]', 'opacity-0');
+                }, 10);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    statusEl.classList.add('translate-y-[-10px]', 'opacity-0');
+                    setTimeout(() => {
+                        if (statusEl.parentNode) {
+                            statusEl.parentNode.removeChild(statusEl);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+        }
+        
+        // Initialize the game when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new GeoConquest();
+        });
+    </script>
+</body>
+</html>
