@@ -1,0 +1,22 @@
+/* LoadingScreen.css */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--background-primary);
+}
+
+.loading-content {
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+.loading-spinner {
+  margin-bottom: var(--spacing-lg);
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}

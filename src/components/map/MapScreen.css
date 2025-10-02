@@ -1,0 +1,65 @@
+/* MapScreen.css */
+.map-screen {
+  padding: 0;
+  min-height: 100vh;
+}
+
+.map-header {
+  text-align: center;
+  padding: var(--spacing-md);
+  background: var(--primary-color);
+  color: white;
+}
+
+.map-header h1 {
+  color: white;
+  margin-bottom: var(--spacing-xs);
+  font-size: 1.5rem;
+}
+
+.location-info {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.map-container {
+  position: relative;
+  margin: 0;
+  border-radius: 0;
+}
+
+.map-controls {
+  padding: var(--spacing-md);
+  background: var(--surface);
+}
+
+.tracking-controls {
+  text-align: center;
+}
+
+.quick-actions .btn-primary,
+.quick-actions .btn-secondary {
+  width: 100%;
+  justify-content: flex-start;
+  gap: var(--spacing-sm);
+}
+
+.asset-info {
+  position: fixed;
+  bottom: 80px;
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+}
+
+@media (max-width: 480px) {
+  .map-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .location-info {
+    font-size: 0.75rem;
+  }
+}
